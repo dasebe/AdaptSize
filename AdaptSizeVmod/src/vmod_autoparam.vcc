@@ -1,0 +1,10 @@
+#
+
+$Module autoparam VMOD
+
+DESCRIPTION
+===========
+
+$Event init_function # does nothing
+$Function BOOL thlru(STRING)
+$Function BOOL explru(STRING)

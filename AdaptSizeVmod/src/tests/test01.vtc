@@ -1,0 +1,3 @@
+varnishtest "Test autoparam vmod"
+
+todo
