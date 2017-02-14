@@ -1,0 +1,22 @@
+--- varnish-4.1.2/bin/varnishd/cache/cache_req_fsm.c	2016-03-04 15:16:12.000000000 +0000
++++ VarnishPatches/cache_req_fsm.c	2016-12-11 11:36:46.501021876 +0000
+@@ -47,6 +47,9 @@
+ #include "vsha256.h"
+ #include "vtim.h"
+ 
++// output
++#include "storage/storage.h"
++
+ static void
+ cnt_vdp(struct req *req, struct busyobj *bo)
+ {
+@@ -422,6 +425,9 @@
+ 	}
+ 
+ 	VSLb(req->vsl, SLT_Hit, "%u", ObjGetXID(wrk, req->objcore));
++	// change to debug hit took place where?
++	VSLb(wrk->vsl, SLT_Storage, "%s %s",
++	    oc->stobj->stevedore->name, oc->stobj->stevedore->ident);
+ 
+ 	VCL_hit_method(req->vcl, wrk, req, NULL, NULL);
+ 

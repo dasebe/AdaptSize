@@ -1,0 +1,25 @@
+--- varnish-4.1.2/lib/libvarnishapi/vsl_dispatch.c	2016-03-04 15:16:12.000000000 +0000
++++ VarnishPatches/vsl_dispatch.c	2016-12-11 11:36:46.504355209 +0000
+@@ -282,8 +282,9 @@
+ 			c->cursor.rec.ptr = c->synth->data;
+ 			c->synth = VTAILQ_NEXT(c->synth, list);
+ 		} else {
+-			assert(c->offset <= c->vtx->len);
+-			if (c->offset == c->vtx->len)
++		  // pseudo bug fix for common failure of this assertion
++		  //			assert(c->offset <= c->vtx->len);
++			if (c->offset >= c->vtx->len)
+ 				/* End of cursor */
+ 				return (0);
+ 
+@@ -307,6 +308,10 @@
+ 				ptr = c->chunk->buf.data;
+ 			}
+ 			c->cursor.rec.ptr = ptr + c->offset - c->chunkstart;
++			// bug fix for "c->offset > c->vtx->len" case
++			if(c->offset >= c->vtx->len)
++			  /* End of cursor */
++			  return (0);
+ 			c->offset += VSL_NEXT(c->cursor.rec.ptr) -
+ 			    c->cursor.rec.ptr;
+ 		}

@@ -1,0 +1,20 @@
+--- varnish-4.1.2/include/tbl/params.h	2016-03-04 15:16:12.000000000 +0000
++++ VarnishPatches/params.h	2016-12-11 11:36:46.504355209 +0000
+@@ -1500,4 +1500,17 @@
+ 	/* func */	NULL
+ )
+ 
++PARAM(
++	/* name */	opt_threshold,
++	/* typ */	uint,
++	/* min */	"1",
++	/* max */	"2147483648",
++	/* default */	"2147483648",
++	/* units */	"bytes",
++	/* flags */	DELAYED_EFFECT,
++	/* s-text */
++	"object size threshold opt param.",
++	/* l-text */	"",
++	/* func */	NULL
++)
+ /*lint -restore */
