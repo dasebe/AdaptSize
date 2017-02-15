@@ -1,5 +1,44 @@
 # The AdaptSize Caching System
 
+AdaptSize is a caching system for the first-level memory cache in a CDN or in a reverse proxy of a large website.
+
+CDN Memory caches typically have to serve high traffic volumes. They are also rarely sharded (sharding is used for second-level SSD caches). This means that hit ratios of first-level memory caches are low and highly variable.
+
+AdaptSize's mission is to
+
+ - maximize the hit ratio, and
+ - stabilize the hit ratio (less variability), while
+ - not imposing any throughput overhead.
+
+AdaptSize is built on top of [Varnish Cache](https://github.com/varnishcache/varnish-cache/), the "high-performance HTTP accelerator".
+
+## Example: comparison to Varnish cache on Akamai production traffic
+
+We replay a production trace from an Akamai edge cache that serves highly multiplexed traffic which is hard to cache. An unmodified Varnish version achieves an average hit ratio of 0.42 due to many objects being evicted before being requested again. Varnish performance is also highly variable: the hit ratio's [coefficient of variation](https://en.wikipedia.org/wiki/Coefficient_of_variation) is 23%.
+
+AdaptSize achieves a hit ratio of 0.66, which is a 1.57x improvement over unmodified Varnish. Additionally, AdaptSize stabilizes performance: the hit ratio's coefficient of variation is 5%, which is a 4.6x improvement.
+
+
+![hitratio_overtime](https://cloud.githubusercontent.com/assets/9959772/22971000/796f6354-f374-11e6-8993-d454c6fb8f4b.png)
+
+While AdaptSize significantly improves the hit ratio, it does not impose a throughput overhead. Specifically, AdaptSize does not add any locks and thus scales exactly like an unmodified Varnish does.
+
+![o6-throughput](https://cloud.githubusercontent.com/assets/9959772/22971202/40cf0576-f375-11e6-933f-d5c4722b0ab0.png)
+
+## How AdaptSize works
+
+AdaptSize is a new caching policy. Caching policies make two types of decisions, which objects to admit into the cache, and which ones to evict.
+
+Almost all prior work on caching policies focuses on the eviction policy (see [this Wikipedia article](https://en.wikipedia.org/wiki/Cache_replacement_policies) or the [webcachesim code base](https://github.com/dasebe/webcachesim)). Popular eviction policies are often LRU or FIFO variants. Varnish uses a "concurrent" LRU variant and admits every object by default.
+
+AdaptSize introduces a new new cache **admission policy**, which limits which objects get admitted into the cache. Admission decisions are based on the following intuition:
+
+> If cache space is limited (as in memory caches), admitting large objects can be bad for the hit ratio (as they force the eviction of many other objects, which then won't be in the cache on their next request). Accordingly, large objects need to prove their worth before being allowed into the cache.
+
+AdaptSize uses a new mathematical theory to continuously tune the admission decision.
+
+![o10-randomization-time-hr-pathex10hk](https://cloud.githubusercontent.com/assets/9959772/22971164/1d026372-f375-11e6-816c-b166487cf83e.png)
+
 
 ## Installing AdaptSize
 
