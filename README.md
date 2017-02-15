@@ -7,7 +7,7 @@ CDN Memory caches serve high traffic volumes and are rarely sharded (sharding is
 AdaptSize's mission is
 
  - to maximize memory cache hit ratios for CDN workloads,
- - to make the cache robust against inherent traffic variability,
+ - to make the cache robust against traffic variability,
  - while not imposing any throughput overhead.
 
 AdaptSize is built on top of [Varnish Cache](https://github.com/varnishcache/varnish-cache/), the "high-performance HTTP accelerator".
