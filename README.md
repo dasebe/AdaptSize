@@ -2,28 +2,31 @@
 
 AdaptSize is a caching system for the first-level memory cache in a CDN or in a reverse proxy of a large website.
 
-CDN Memory caches typically have to serve high traffic volumes. They are also rarely sharded (sharding is used for second-level SSD caches). This means that hit ratios of first-level memory caches are low and highly variable.
+CDN Memory caches serve high traffic volumes and are rarely sharded (sharding is used for second-level SSD caches). Typically, this means that hit ratios of first-level memory caches are low and highly variable.
 
-AdaptSize's mission is to
+AdaptSize's mission is
 
- - maximize the hit ratio, and
- - stabilize the hit ratio (less variability), while
- - not imposing any throughput overhead.
+ - to maximize memory cache hit ratios for CDN workloads,
+ - to make the cache robust against inherent traffic variability,
+ - while not imposing any throughput overhead.
 
 AdaptSize is built on top of [Varnish Cache](https://github.com/varnishcache/varnish-cache/), the "high-performance HTTP accelerator".
 
-## Example: comparison to Varnish cache on Akamai production traffic
+## Example: comparison to Varnish cache on production traffic
 
-We replay a production trace from an Akamai edge cache that serves highly multiplexed traffic which is hard to cache. An unmodified Varnish version achieves an average hit ratio of 0.42 due to many objects being evicted before being requested again. Varnish performance is also highly variable: the hit ratio's [coefficient of variation](https://en.wikipedia.org/wiki/Coefficient_of_variation) is 23%.
+We replay a production trace from an edge cache that serves highly multiplexed traffic with a variety of different traffic patterns. An unmodified Varnish version achieves an average hit ratio of 0.42. We find that many web objects are evicted before being requested again. Varnish performance is also highly variable: the hit ratio's [coefficient of variation](https://en.wikipedia.org/wiki/Coefficient_of_variation) is 23%.
 
 AdaptSize achieves a hit ratio of 0.66, which is a 1.57x improvement over unmodified Varnish. Additionally, AdaptSize stabilizes performance: the hit ratio's coefficient of variation is 5%, which is a 4.6x improvement.
 
+![Hit ratio of AdaptSize and Varnish on a production trace](https://cloud.githubusercontent.com/assets/9959772/22971000/796f6354-f374-11e6-8993-d454c6fb8f4b.png)
 
-![hitratio_overtime](https://cloud.githubusercontent.com/assets/9959772/22971000/796f6354-f374-11e6-8993-d454c6fb8f4b.png)
+**Figure 1: AdaptSize consistently improves the hit ratio when compared to unmodified Varnish.**
 
-While AdaptSize significantly improves the hit ratio, it does not impose a throughput overhead. Specifically, AdaptSize does not add any locks and thus scales exactly like an unmodified Varnish does.
+While AdaptSize significantly improves the hit ratio, it does not impose any throughput overhead. Specifically, AdaptSize does not add any synchronization locks and thus scales exactly like an unmodified Varnish does.
 
-![o6-throughput](https://cloud.githubusercontent.com/assets/9959772/22971202/40cf0576-f375-11e6-933f-d5c4722b0ab0.png)
+![Throughput of AdaptSize and Varnish](https://cloud.githubusercontent.com/assets/9959772/22971202/40cf0576-f375-11e6-933f-d5c4722b0ab0.png)
+
+**Figure 2: AdaptSize achieves the same throughput as Varnish, for any hit ratio. Left plot shows high hit ratio scenario, right plot shows low hit ratio scenario.**
 
 ## How AdaptSize works
 
@@ -31,28 +34,50 @@ AdaptSize is a new caching policy. Caching policies make two types of decisions,
 
 Almost all prior work on caching policies focuses on the eviction policy (see [this Wikipedia article](https://en.wikipedia.org/wiki/Cache_replacement_policies) or the [webcachesim code base](https://github.com/dasebe/webcachesim)). Popular eviction policies are often LRU or FIFO variants. Varnish uses a "concurrent" LRU variant and admits every object by default.
 
-AdaptSize introduces a new new cache **admission policy**, which limits which objects get admitted into the cache. Admission decisions are based on the following intuition:
+To see why eviction policies by themselves are not enough, consider this scenario.
 
-> If cache space is limited (as in memory caches), admitting large objects can be bad for the hit ratio (as they force the eviction of many other objects, which then won't be in the cache on their next request). Accordingly, large objects need to prove their worth before being allowed into the cache.
+> Imagine that there are only two types of objects: 9999 small objects of size 100 KB (say, small web pages) and 1 large object of size 500 MB (say, a software download). Further, assume that all objects are equally popular and requested forever in round-robin order. Suppose that our HOC has a capacity of 1 GB.
+> A HOC that does not use admission control cannot achieve an OHR above 0.5. Every time the large object is requested, it pushes out ~5000 small objects. It does not matter which objects are evicted: when the evicted objects are requested, they cannot contribute to the OHR.
 
-AdaptSize uses a new mathematical theory to continuously tune the admission decision.
+While this simplifies things a lot, variants of this actually happen frequently under real production traffic. In fact, production traces regularly contain requests to objects between one 1B and several GBs.
 
-![o10-randomization-time-hr-pathex10hk](https://cloud.githubusercontent.com/assets/9959772/22971164/1d026372-f375-11e6-816c-b166487cf83e.png)
+Note that a simple admission policy can boost the hit ratio in the toy scenario above. For example, if the cache admits no object above 100 KB, the overall hit ratio will almost double to 0.99. Unfortunately, simple size thresholds like this are not very robust against changes in the request traffic.
+
+AdaptSize uses a new admission policy that incorporates both object size and popularity. The idea is to use a probability that depends on the object size: 
+
+- small objects are admitted with high proabability
+- medium-sized objects are amitted with a small probability, so if frequently requested they'll get admitted eventually
+- very large objects have such a small admission probability, they rarely get admitted (unless very popular).
+
+AdaptSize continuously optimizes this mapping of size to admission probability using a new mathematical model. This model works based on observations of the most recent traffic and is used to derive the admission policy that maximizes the cache hit ratio.
 
 
 ## Installing AdaptSize
 
-### Step 1: Download Varnish Source Code
+AdaptSize is a proof of concept, and not ready for production use. This repository contains the source code of the AdaptSize library (the math model) and the glue code to incorporate this model into the Varnish caching system.
 
-Obtain a copy of Varnish 4.1.2 from https://varnish-cache.org/releases/rel4.1.2.html.
-Unpack the copy into a folder named varnish-4.1.2.
+Here are the steps to recreate our test setup.
 
-    cd AdaptSize
+### Step 0: Install dependencies
+
+We need to compile Varnish from scratch and thus need [the same dependencies](https://varnish-cache.org/docs/trunk/installation/install.html).
+
+Something like this might work
+
+    sudo apt-get install -y autotools-dev make automake libtool pkg-config
+
+
+### Step 1: Checkout AdaptSize and download Varnish source code
+
+Obtain a copy of [AdaptSize](https://github.com/dasebe/AdaptSize/archive/master.zip) and [Varnish 4.1.2](https://varnish-cache.org/releases/rel4.1.2.html).
+
+Unpack AdaptSize and navigate into the AdaptSize folder. In that folder, unpack the copy into a subdirectory named varnish-4.1.2.
+
     wget https://repo.varnish-cache.org/source/varnish-4.1.2.tar.gz
     tar xfvz varnish-4.1.2.tar.gz
 
 
-### Step 2: Patch, Compile, and Install Varnish
+### Step 2: Patch, compile, and install Varnish
 
 We need to apply three small patches to the Varnish code base.
 
@@ -60,9 +85,6 @@ We need to apply three small patches to the Varnish code base.
     patch varnish-4.1.2/include/tbl/params.h < VarnishPatches/params.patch
     patch varnish-4.1.2/lib/libvarnishapi/vsl_dispatch.c < VarnishPatches/vsl_dispatch.patch
 
-Check your dependencies. Something like this might work
-
-    sudo apt-get install -y autotools-dev make automake libtool pkg-config libvarnishapi1 libvarnishapi-dev
 
 
 Then we can compile and install as usual
@@ -73,9 +95,9 @@ Then we can compile and install as usual
     make install
     
 
-### Step 3: Compile and Install AdaptSize Vmod
+### Step 3: Compile and install AdaptSize Vmod
 
-The AdaptSizeVmod performs the actual admission control and relies on the second patch from above.
+The AdaptSize Vmod performs the actual admission control and relies on the second patch from above.
 You may need to adjust the config path to your actual install path.
 
     cd AdaptSizeVmod
@@ -86,14 +108,14 @@ You may need to adjust the config path to your actual install path.
     make install
 
 
-### Step 4: Compile AdaptSize Tuning Module
+### Step 4: Compile AdaptSize tuning module
 
 This program is run in parallel to Varnish and automatically tunes the size threshold parameter on live statistics from the cache.
 
      cd AdaptSizeTuner
      make
 
-## Installing Additional Tools
+## Installing additional tools
 
 These programs are not part of AdaptSize but were used to create plots and statistics.
 
