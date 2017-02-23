@@ -12,6 +12,8 @@ AdaptSize's mission is
 
 AdaptSize is built on top of [Varnish Cache](https://github.com/varnishcache/varnish-cache/), the "high-performance HTTP accelerator".
 
+A detailed description of AdaptSize will soon be available, see [References](#references) for more information.
+
 ## Example: comparison to Varnish cache on production traffic
 
 We replay a production trace from an edge cache that serves highly multiplexed traffic with a variety of different traffic patterns. An unmodified Varnish version achieves an average hit ratio of 0.42. We find that many web objects are evicted before being requested again. Varnish performance is also highly variable: the hit ratio's [coefficient of variation](https://en.wikipedia.org/wiki/Coefficient_of_variation) is 23%.
@@ -128,3 +130,13 @@ Other types of statistics
 
       cd VarnishOtherStats
       make
+
+## References
+
+We ask academic works, which built on this code, to reference the AdaptSize paper:
+
+    AdaptSize: Orchestrating the Hot Object Memory Cache in a CDN
+    Daniel S. Berger, Ramesh K. Sitaraman, Mor Harchol-Balter
+    To appear in USENIX NSDI in March 2017.
+    
+You can find more information on [USENIX NSDI 2017 here.](https://www.usenix.org/conference/nsdi17/technical-sessions)
