@@ -117,20 +117,6 @@ This program is run in parallel to Varnish and automatically tunes the size thre
      cd AdaptSizeTuner
      make
 
-## Installing additional tools
-
-These programs are not part of AdaptSize but were used to create plots and statistics.
-
-Detailed hit ratio statistics
-
-      cd VarnishHitStats
-      make
-
-Other types of statistics
-
-      cd VarnishOtherStats
-      make
-
 ### Step 5: Run and experiment
 
 Create an experimental setup with a client and backend service, e.g., the one [we used ourselves](https://github.com/dasebe/webtracereplay).
@@ -158,7 +144,19 @@ An example VCL could look like this:
       }
 
 
+## Installing additional tools
 
+These programs are not part of AdaptSize but were used to create plots and statistics.
+
+Detailed hit ratio statistics
+
+      cd VarnishHitStats
+      make
+
+Other types of statistics
+
+      cd VarnishOtherStats
+      make
 
 ## References
 
