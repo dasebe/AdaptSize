@@ -131,6 +131,35 @@ Other types of statistics
       cd VarnishOtherStats
       make
 
+### Step 5: Run and experiment
+
+Create an experimental setup with a client and backend service, e.g., the one [we used ourselves](https://github.com/dasebe/webtracereplay).
+
+Configure Varnish with a [VCL-file](http://varnish-cache.org/docs/4.0/reference/vcl.html) that enforces the admission decisions made by the AdaptSizeVMOD. Specifically, autoparam is called on a cache miss (aka vcl_backend_response) and is called with the object's size (aka beresp.http.Content-Length). It returns a bool which indicates whether the object should bypass the cache or not.
+
+An example VCL could look like this:
+
+      vcl 4.0;
+      
+      # use the AdaptSizeVmod	aka autoparam
+      import autoparam;
+      
+      backend default {
+          .host = "127.0.0.1";
+          .port = "8000";
+      }
+      
+      sub vcl_backend_response {
+        if (!autoparam.explru(beresp.http.Content-Length)) {
+           set beresp.uncacheable = true;
+           set beresp.ttl = 0s;
+           return (deliver);
+        }
+      }
+
+
+
+
 ## References
 
 We ask academic works, which built on this code, to reference the AdaptSize paper:
