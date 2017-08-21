@@ -117,7 +117,7 @@ This program is run in parallel to Varnish and automatically tunes the size thre
      cd AdaptSizeTuner
      make
 
-### Step 5: Run and experiment
+### Step 5: Run an experiment
 
 Create an experimental setup with a client and backend service, e.g., the one [we used ourselves](https://github.com/dasebe/webtracereplay).
 
