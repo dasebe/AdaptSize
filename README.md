@@ -12,7 +12,7 @@ AdaptSize's mission is
 
 AdaptSize is built on top of [Varnish Cache](https://github.com/varnishcache/varnish-cache/), the "high-performance HTTP accelerator".
 
-A detailed description of AdaptSize will soon be available, see [References](#references) for more information.
+A detailed description of AdaptSize is available in our [Paper (PDF)](https://www.usenix.org/system/files/conference/nsdi17/nsdi17-berger.pdf) and our [talk slides (PDF)](https://www.usenix.org/sites/default/files/conference/protected-files/nsdi17_slides_berger.pdf)  or as [audio/video recording](https://www.usenix.org/conference/nsdi17/technical-sessions/presentation/berger).
 
 ## Example: comparison to Varnish cache on production traffic
 
