@@ -6,8 +6,8 @@ static const char ourname[] = "stattest";
 int
 main(int argc, char * const *argv)
 {
-  if(argc<5) {
-    fprintf(stderr, "params: varnishfolder varnishadm cachesizeGB searchmethod");
+  if(argc<6) {
+    fprintf(stderr, "params: varnishfolder varnishadm cachesize cachetype searchmethod\ncachesize is in GB\ncachetype is ExpLRU (for AdaptSize) or ThLRU (for automatic tuning of deterministic thresholds)");
     exit(1);
   }
   char * varnishfolder = argv[1];
@@ -26,7 +26,8 @@ main(int argc, char * const *argv)
   }
 
   cache_size = 1024L*1024L*atol(argv[3]);
-  search_method = atoi(argv[4]);
+  cacheType = argv[4];
+  search_method = atoi(argv[5]);
 
   // param init
   totalrecc = 0;
