@@ -143,6 +143,12 @@ An example VCL could look like this:
         }
       }
 
+After starting Varnish (and, ideally before actually sending requests to Varnish) start the AdaptSizeTuner
+
+     AdaptSizeTuner/adaptsizetuner $varnishfolder $varnishadm $cachesize ExpLRU 1
+
+You will need to replace $varnishfolder by the path where your Varnish instance's vsm file lives (the basename of the -N parameter of varnishstat etc); $varnishadm should be the path to the varnishadm executable.
+The final parameter is $cachesize, which should be your cache's capacity in GB.
 
 ## Installing additional tools
 
