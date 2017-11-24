@@ -25,7 +25,14 @@ main(int argc, char * const *argv)
     exit(1);
   }
 
-  cache_size = 1024L*1024L*atol(argv[3]);
+  long cspar = atol(argv[3]);
+  cache_size = 1024L*1024L*cspar;
+  // quick sanity check on cache size: larger than 1GB and less than 1000GB
+  if(cspar <= 1 || cspar > 1000) {
+      fprint(stderr, "Unusual size of %l bytes for a memory cache.\nDid you state cachesize in GB?\nExiting", cache_size);
+      exit(1);
+  }
+
   cacheType = argv[4];
   search_method = atoi(argv[5]);
 
@@ -74,9 +81,9 @@ main(int argc, char * const *argv)
     // output status
     if(ltime+4<(unsigned)time(NULL) && recc!=0 ) {
       if( (search_method == 1 || search_method == 9))
-	printf("nrecc(%lu) markov(%f)\n",recc,recc/(double)markov_interval_length);
+	printf("Number of requests(%lu) - Fraction of requests required for tuning method 1(%f)\n",recc,recc/(double)markov_interval_length);
       if( (search_method == 2  || search_method == 9) )
-	printf("nrecc(%lu) hillclimb(%f)\n",recc, recc/(double)hillclimb_interval_length);
+	printf("Number of requests(%lu) - Fraction of requests required for tuning method 2(%f)\n",recc, recc/(double)hillclimb_interval_length);
       ltime = (unsigned)time(NULL);
       fflush(stdout);
     }
@@ -93,7 +100,7 @@ main(int argc, char * const *argv)
     if( (search_method == 2  || search_method == 9) && (recc>hillclimb_interval_length ) ) { // 
       recc = 0;
       hitc = 0;
-      printf("hillclimbing: %f=%lu %f=%lu\n",param-lookSize,hitc1,log2(2*pow(2,param)-pow(2,param-lookSize)),hitc2);
+      printf("Hillclimbing: %f=%lu %f=%lu\n",param-lookSize,hitc1,log2(2*pow(2,param)-pow(2,param-lookSize)),hitc2);
       hillclimbing(hitc1,hitc2);
       thres = 0;
       resetCache();

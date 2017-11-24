@@ -496,7 +496,7 @@ static int __match_proto__(VSLQ_dispatch_f)
 }
 
 int enforceParam(double curParam,char * varnishfolder,char * vadmexe) {
-  printf("enforcing_param %f %lu %llu\n",curParam,(long unsigned)pow(2,curParam),totalrecc);
+  printf("Enforcing_param new_log2(%f) New_bytes(%lu) Total #reqs (%llu)\n",curParam,(long unsigned)pow(2,curParam),totalrecc);
   char command[350];
   snprintf(command, sizeof(command), "%s -n %s 'param.set opt_threshold %lu'",
 	   vadmexe,varnishfolder,(long unsigned)pow(2,curParam));
@@ -593,7 +593,7 @@ int findParam() {
   double x1 = bestx1;
   double h1 = besth1;
 
-  printf("paro(%f) parb(%f) prHR(%f) acHr(%f) obj(%lu) pobj(%lu) rem(%lu) uBytes(%f)\n",
+  printf("Last param(%f) Best guess(%f) Measured OHR(%f) Model OHR(%f) Total #Objects(%lu) In-model #Objects(%lu) Removed #Objects(%lu) Unique Byte Factor(%f)\n",
 	 param, x1, h1/pptotalreqs, ((double)hitc)/((double)recc),objcount,ppobjcount,removedobjs,ppUniqueBytes/(double)cache_size);
 
   double x2;
@@ -620,7 +620,7 @@ int findParam() {
     VUT_Main();
     if(VUT.sigint)
       return 1;
-    printf("%f : %f | %f : %f\n",x1,h1/pptotalreqs,x2,h2/pptotalreqs);
+    printf("Model param low (%f) : ohr low (%f) | param high (%f) : ohr high (%f)\n",x1,h1/pptotalreqs,x2,h2/pptotalreqs);
     if (h2 > h1) {
       SHFT3(x0,x1,x2,r*x1+v*x3);
       SHFT2(h1,h2,predictPoiss(reqcounts, reqsizes, ppobjcount, cacheType, x2));
@@ -641,10 +641,10 @@ int findParam() {
     return 1;
   if (h1 > h2) { // which one should be the final parameter
     param = x1;
-    printf("final param: %f hit ratio: %f\n",param,h1/pptotalreqs);
+    printf("Final param (%f) - model hit ratio (%f)\n",param,h1/pptotalreqs);
   } else {
     param = x2;
-    printf("final param: %f hit ratio: %f\n",param,h2/pptotalreqs);
+    printf("Final param (%f) - model hit ratio (%f)\n",param,h2/pptotalreqs);
   }
   return 0;
 }
