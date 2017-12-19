@@ -1,4 +1,9 @@
 #
+# Copyright (c) 2017, Daniel S. Berger
+#
+# Author: Daniel S. Berger
+# (vmodtool requires this format.)
+#
 
 $Module autoparam VMOD
 
