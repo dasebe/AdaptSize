@@ -254,9 +254,17 @@ static VRB_HEAD(t_key2, cacheMT) h_key2 = VRB_INITIALIZER(&h_key2);
 static inline int
 lcmp_key(const struct cacheMT *a, const struct cacheMT *b)
 {
-  if (a->hash != b->hash)
-    return (a->hash - b->hash);
-  return (a->size - b->size);
+  if (a->hash > b->hash) 
+    return (1);
+  else if(a->hash < b->hash)
+    return(-1);
+  else {
+    if(a->size > b->size)
+      return(1);
+    else if(a->size < b->size)
+      return(-1);
+    else return(0);
+  }
 }
 
 VRB_PROTOTYPE_STATIC(t_key1, cacheMT, e_key, lcmp_key);
